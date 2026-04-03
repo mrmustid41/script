@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -11,12 +12,11 @@ gui.Name = "LoaderUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Main frame
+-- Main frame (bigger)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 360, 0, 240)
-frame.Position = UDim2.new(0.5, -180, 0.5, -120)
+frame.Size = UDim2.new(0, 420, 0, 300)
+frame.Position = UDim2.new(0.5, -210, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BackgroundTransparency = 0
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
@@ -24,14 +24,12 @@ frame.Parent = gui
 local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(0, 170, 255)
 stroke.Thickness = 2
-stroke.Transparency = 0
 stroke.Parent = frame
 
 -- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-titleBar.BackgroundTransparency = 0
 titleBar.Parent = frame
 
 local title = Instance.new("TextLabel")
@@ -39,98 +37,169 @@ title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
 title.Text = "Universal Script Hub"
 title.TextColor3 = Color3.fromRGB(0, 170, 255)
-title.TextTransparency = 0
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
 title.Parent = titleBar
 
--- Status
+-- Tabs bar
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 30)
+tabBar.Position = UDim2.new(0, 0, 0, 30)
+tabBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+tabBar.Parent = frame
+
+-- Pages
+local exploitsPage = Instance.new("Frame")
+exploitsPage.Size = UDim2.new(1, 0, 1, -85)
+exploitsPage.Position = UDim2.new(0, 0, 0, 60)
+exploitsPage.BackgroundTransparency = 1
+exploitsPage.Parent = frame
+
+local playerPage = Instance.new("Frame")
+playerPage.Size = UDim2.new(1, 0, 1, -85)
+playerPage.Position = UDim2.new(0, 0, 0, 60)
+playerPage.BackgroundTransparency = 1
+playerPage.Visible = false
+playerPage.Parent = frame
+
+-- STATUS BAR (BOTTOM)
+local statusBar = Instance.new("Frame")
+statusBar.Size = UDim2.new(1, 0, 0, 25)
+statusBar.Position = UDim2.new(0, 0, 1, -25)
+statusBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+statusBar.Parent = frame
+
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -20, 0, 40)
-status.Position = UDim2.new(0, 10, 0, 40)
+status.Size = UDim2.new(1, -10, 1, 0)
+status.Position = UDim2.new(0, 5, 0, 0)
 status.BackgroundTransparency = 1
 status.Text = "Ready."
-status.TextColor3 = Color3.new(1,1,1)
-status.TextTransparency = 0
+status.TextColor3 = Color3.fromRGB(0,255,100)
+status.TextXAlignment = Enum.TextXAlignment.Left
 status.TextScaled = true
-status.Parent = frame
+status.Parent = statusBar
+
+-- Tab system
+local function createTab(text, xPos, page)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.5, 0, 1, 0)
+    btn.Position = UDim2.new(xPos, 0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextScaled = true
+    btn.Parent = tabBar
+
+    btn.MouseButton1Click:Connect(function()
+        exploitsPage.Visible = false
+        playerPage.Visible = false
+        page.Visible = true
+    end)
+end
+
+createTab("Exploits", 0, exploitsPage)
+createTab("Player", 0.5, playerPage)
 
 -- Button creator
-local function createButton(text, yPos, callback)
+local function createButton(parent, text, yPos, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.8, 0, 0, 30)
     btn.Position = UDim2.new(0.1, 0, 0, yPos)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.BackgroundTransparency = 0
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextTransparency = 0
     btn.Text = text
     btn.TextScaled = true
-    btn.Parent = frame
+    btn.Parent = parent
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(0, 170, 255)
-    stroke.Transparency = 0
     stroke.Parent = btn
 
     btn.MouseButton1Click:Connect(callback)
 end
 
 -- =========================
--- BUTTONS
+-- EXPLOITS TAB
 -- =========================
 
--- ESP Button
-createButton("Enable ESP", 90, function()
+createButton(exploitsPage, "Enable ESP", 20, function()
     status.Text = "Injecting ESP..."
     task.wait(0.8)
-
-    local success, err = pcall(function()
+    local success = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/mrmustid41/script/refs/heads/main/esp"))()
     end)
-
-    if success then
-        status.Text = "ESP Enabled"
-    else
-        status.Text = "ESP Failed"
-        warn(err)
-    end
+    status.Text = success and "ESP Enabled" or "ESP Failed"
 end)
 
--- 🪶 Fly Button (replaces Aimbot)
-createButton("Enable Fly", 130, function()
+createButton(exploitsPage, "Enable Fly", 60, function()
     status.Text = "Injecting Fly..."
     task.wait(0.8)
-
-    local success, err = pcall(function()
+    local success = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/mrmustid41/script/refs/heads/main/fly"))()
     end)
+    status.Text = success and "Fly Enabled" or "Fly Failed"
+end)
 
-    if success then
-        status.Text = "Fly Enabled"
-    else
-        status.Text = "Fly Failed"
-        warn(err)
+-- REAL NOCLIP
+local noclip = false
+
+createButton(exploitsPage, "Toggle Noclip", 100, function()
+    noclip = not noclip
+    status.Text = noclip and "Noclip Enabled" or "Noclip Disabled"
+end)
+
+RunService.Stepped:Connect(function()
+    if noclip and player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
     end
 end)
 
--- 😈 Trap button
-createButton("Enable Noclip", 170, function()
-    status.Text = "Enabling Noclip..."
-    task.wait(1)
-    status.Text = "Injected!"
-    task.wait(1)
+-- =========================
+-- PLAYER TAB
+-- =========================
 
+createButton(playerPage, "Speed Boost", 20, function()
+    local h = player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.WalkSpeed = 50 end
+    status.Text = "Speed Boosted"
+end)
+
+createButton(playerPage, "Reset Speed", 60, function()
+    local h = player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.WalkSpeed = 16 end
+    status.Text = "Speed Reset"
+end)
+
+createButton(playerPage, "High Jump", 100, function()
+    local h = player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.JumpPower = 100 end
+    status.Text = "Jump Boosted"
+end)
+
+createButton(playerPage, "Reset Jump", 140, function()
+    local h = player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.JumpPower = 50 end
+    status.Text = "Jump Reset"
+end)
+
+-- 😈 Your Favorite Game
+createButton(playerPage, "Your Favorite Game", 180, function()
+    status.Text = "Finding your favorite game..."
+    task.wait(1)
+    status.Text = "Found it!"
+    task.wait(1)
     TeleportService:Teleport(84694807493536, player)
 end)
 
 -- =========================
--- DRAG SYSTEM (TITLE BAR)
+-- DRAG SYSTEM
 -- =========================
 local dragging = false
-local dragInput
-local dragStart
-local startPos
+local dragInput, dragStart, startPos
 
 local function update(input)
     local delta = input.Position - dragStart
@@ -169,31 +238,54 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- =========================
--- SMOOTH TOGGLE (K KEY)
+-- FIXED SMOOTH TOGGLE
 -- =========================
 local visible = true
+local original = {}
 
-local function tweenObject(obj, transparency)
+local function saveOriginals(obj)
+    if obj:IsA("Frame") or obj:IsA("TextButton") then
+        original[obj] = original[obj] or {}
+        original[obj].BackgroundTransparency = obj.BackgroundTransparency
+    end
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+        original[obj] = original[obj] or {}
+        original[obj].TextTransparency = obj.TextTransparency
+    end
+    if obj:IsA("UIStroke") then
+        original[obj] = original[obj] or {}
+        original[obj].Transparency = obj.Transparency
+    end
+    for _, child in ipairs(obj:GetChildren()) do
+        saveOriginals(child)
+    end
+end
+
+saveOriginals(frame)
+
+local function tweenObject(obj, hide)
+    local data = original[obj]
+
     if obj:IsA("Frame") or obj:IsA("TextButton") then
         TweenService:Create(obj, TweenInfo.new(0.3), {
-            BackgroundTransparency = transparency
+            BackgroundTransparency = hide and 1 or (data and data.BackgroundTransparency or 0)
         }):Play()
     end
 
     if obj:IsA("TextLabel") or obj:IsA("TextButton") then
         TweenService:Create(obj, TweenInfo.new(0.3), {
-            TextTransparency = transparency
+            TextTransparency = hide and 1 or (data and data.TextTransparency or 0)
         }):Play()
     end
 
     if obj:IsA("UIStroke") then
         TweenService:Create(obj, TweenInfo.new(0.3), {
-            Transparency = transparency
+            Transparency = hide and 1 or (data and data.Transparency or 0)
         }):Play()
     end
 
     for _, child in ipairs(obj:GetChildren()) do
-        tweenObject(child, transparency)
+        tweenObject(child, hide)
     end
 end
 
@@ -202,9 +294,9 @@ local function toggleUI()
 
     if visible then
         frame.Visible = true
-        tweenObject(frame, 0)
+        tweenObject(frame, false)
     else
-        tweenObject(frame, 1)
+        tweenObject(frame, true)
         task.wait(0.3)
         frame.Visible = false
     end
@@ -212,7 +304,6 @@ end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-
     if input.KeyCode == Enum.KeyCode.K then
         toggleUI()
     end
