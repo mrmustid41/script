@@ -80,7 +80,7 @@ end
 -- BUTTONS
 -- =========================
 
--- ESP Button (your version)
+-- ESP Button
 createButton("Enable ESP", 90, function()
     status.Text = "Injecting ESP..."
     task.wait(0.8)
@@ -97,9 +97,21 @@ createButton("Enable ESP", 90, function()
     end
 end)
 
--- Aimbot (fake)
-createButton("Enable Aimbot", 130, function()
-    status.Text = "Aimbot Enabled"
+-- 🪶 Fly Button (replaces Aimbot)
+createButton("Enable Fly", 130, function()
+    status.Text = "Injecting Fly..."
+    task.wait(0.8)
+
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/mrmustid41/script/refs/heads/main/fly"))()
+    end)
+
+    if success then
+        status.Text = "Fly Enabled"
+    else
+        status.Text = "Fly Failed"
+        warn(err)
+    end
 end)
 
 -- 😈 Trap button
