@@ -283,9 +283,9 @@ createButton(playerPage,"Your Favorite Game",function()
     TeleportService:Teleport(84694807493536,player)
 end)
 
--- PLAYER TAB: Touch Fling Others
 local touchFlingOthers = false
 local touchConnection = nil
+local hitDebounce = {}
 
 createButton(playerPage,"Toggle Touch Fling Others",function()
     touchFlingOthers = not touchFlingOthers
@@ -296,7 +296,6 @@ createButton(playerPage,"Toggle Touch Fling Others",function()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- Disconnect previous connection if it exists
     if touchConnection then
         touchConnection:Disconnect()
         touchConnection = nil
@@ -305,16 +304,29 @@ createButton(playerPage,"Toggle Touch Fling Others",function()
     if touchFlingOthers then
         touchConnection = hrp.Touched:Connect(function(hit)
             if not touchFlingOthers then return end
-            if hit and hit.Parent and hit.Parent ~= char then
-                local otherHRP = hit.Parent:FindFirstChild("HumanoidRootPart")
+
+            local otherChar = hit:FindFirstAncestorOfClass("Model")
+            local otherPlayer = Players:GetPlayerFromCharacter(otherChar)
+
+            if otherPlayer and otherPlayer ~= player then
+                if hitDebounce[otherPlayer] then return end
+                hitDebounce[otherPlayer] = true
+
+                local otherHRP = otherChar:FindFirstChild("HumanoidRootPart")
                 if otherHRP then
-                    -- fling the other player
-                    otherHRP.Velocity = Vector3.new(
-                        math.random(-200,200),
-                        200,
-                        math.random(-200,200)
-                    )
+                    local dir = (otherHRP.Position - hrp.Position).Unit
+
+                    -- STRONG fling
+                    otherHRP.AssemblyLinearVelocity =
+                        dir * 500 + Vector3.new(0,250,0)
+
+                    -- stop YOU from moving
+                    hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
                 end
+
+                task.delay(0.5,function()
+                    hitDebounce[otherPlayer] = nil
+                end)
             end
         end)
     end
