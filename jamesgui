@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
@@ -15,6 +16,7 @@ local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 360, 0, 240)
 frame.Position = UDim2.new(0.5, -180, 0.5, -120)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BackgroundTransparency = 0
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
@@ -22,12 +24,14 @@ frame.Parent = gui
 local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(0, 170, 255)
 stroke.Thickness = 2
+stroke.Transparency = 0
 stroke.Parent = frame
 
 -- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+titleBar.BackgroundTransparency = 0
 titleBar.Parent = frame
 
 local title = Instance.new("TextLabel")
@@ -35,6 +39,7 @@ title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
 title.Text = "Universal Script Hub"
 title.TextColor3 = Color3.fromRGB(0, 170, 255)
+title.TextTransparency = 0
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
 title.Parent = titleBar
@@ -46,6 +51,7 @@ status.Position = UDim2.new(0, 10, 0, 40)
 status.BackgroundTransparency = 1
 status.Text = "Ready."
 status.TextColor3 = Color3.new(1,1,1)
+status.TextTransparency = 0
 status.TextScaled = true
 status.Parent = frame
 
@@ -55,13 +61,16 @@ local function createButton(text, yPos, callback)
     btn.Size = UDim2.new(0.8, 0, 0, 30)
     btn.Position = UDim2.new(0.1, 0, 0, yPos)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.BackgroundTransparency = 0
     btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextTransparency = 0
     btn.Text = text
     btn.TextScaled = true
     btn.Parent = frame
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(0, 170, 255)
+    stroke.Transparency = 0
     stroke.Parent = btn
 
     btn.MouseButton1Click:Connect(callback)
@@ -71,7 +80,7 @@ end
 -- BUTTONS
 -- =========================
 
--- ESP Button (now runs script)
+-- ESP Button (your version)
 createButton("Enable ESP", 90, function()
     status.Text = "Injecting ESP..."
     task.wait(0.8)
@@ -144,5 +153,55 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
+    end
+end)
+
+-- =========================
+-- SMOOTH TOGGLE (K KEY)
+-- =========================
+local visible = true
+
+local function tweenObject(obj, transparency)
+    if obj:IsA("Frame") or obj:IsA("TextButton") then
+        TweenService:Create(obj, TweenInfo.new(0.3), {
+            BackgroundTransparency = transparency
+        }):Play()
+    end
+
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+        TweenService:Create(obj, TweenInfo.new(0.3), {
+            TextTransparency = transparency
+        }):Play()
+    end
+
+    if obj:IsA("UIStroke") then
+        TweenService:Create(obj, TweenInfo.new(0.3), {
+            Transparency = transparency
+        }):Play()
+    end
+
+    for _, child in ipairs(obj:GetChildren()) do
+        tweenObject(child, transparency)
+    end
+end
+
+local function toggleUI()
+    visible = not visible
+
+    if visible then
+        frame.Visible = true
+        tweenObject(frame, 0)
+    else
+        tweenObject(frame, 1)
+        task.wait(0.3)
+        frame.Visible = false
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.K then
+        toggleUI()
     end
 end)
