@@ -283,52 +283,40 @@ createButton(playerPage,"Your Favorite Game",function()
     TeleportService:Teleport(84694807493536,player)
 end)
 
-local touchFling=false
-local flingConnection=nil
-local spin=nil
+-- PLAYER TAB: Touch Fling Others
+local touchFlingOthers = false
+local touchConnection = nil
 
-createButton(playerPage,"Toggle Touch Fling",function()
-    touchFling = not touchFling
-    
-    local char=player.Character
+createButton(playerPage,"Toggle Touch Fling Others",function()
+    touchFlingOthers = not touchFlingOthers
+    status.Text = touchFlingOthers and "Touch Fling Enabled" or "Touch Fling Disabled"
+
+    local char = player.Character
     if not char then return end
-    local hrp=char:FindFirstChild("HumanoidRootPart")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    if touchFling then
-        status.Text="Touch Fling Enabled"
+    -- Disconnect previous connection if it exists
+    if touchConnection then
+        touchConnection:Disconnect()
+        touchConnection = nil
+    end
 
-        spin=Instance.new("BodyAngularVelocity")
-        spin.MaxTorque=Vector3.new(1e9,1e9,1e9)
-        spin.AngularVelocity=Vector3.new(0,3000,0)
-        spin.Parent=hrp
-
-        flingConnection=hrp.Touched:Connect(function(hit)
-            if not touchFling then return end
-
-            local otherChar=hit:FindFirstAncestorOfClass("Model")
-            local otherPlayer=Players:GetPlayerFromCharacter(otherChar)
-
-            if otherPlayer and otherPlayer~=player then
-                local otherHRP=otherChar:FindFirstChild("HumanoidRootPart")
+    if touchFlingOthers then
+        touchConnection = hrp.Touched:Connect(function(hit)
+            if not touchFlingOthers then return end
+            if hit and hit.Parent and hit.Parent ~= char then
+                local otherHRP = hit.Parent:FindFirstChild("HumanoidRootPart")
                 if otherHRP then
-                    otherHRP.Velocity = (hrp.CFrame.LookVector * 200) + Vector3.new(0,100,0)
+                    -- fling the other player
+                    otherHRP.Velocity = Vector3.new(
+                        math.random(-200,200),
+                        200,
+                        math.random(-200,200)
+                    )
                 end
             end
         end)
-
-    else
-        status.Text="Touch Fling Disabled"
-
-        if spin then
-            spin:Destroy()
-            spin=nil
-        end
-
-        if flingConnection then
-            flingConnection:Disconnect()
-            flingConnection=nil
-        end
     end
 end)
 
