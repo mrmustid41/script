@@ -1,0 +1,51 @@
+local Players = game:GetService("Players")
+
+local function addHighlight(character, color)
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = color or Color3.fromRGB(0, 255, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
+    highlight.Parent = character
+end
+
+local function addNameTag(player, character)
+    local head = character:WaitForChild("Head")
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "NameTag"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = player.DisplayName
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Parent = billboard
+end
+
+local function onCharacterAdded(player, character)
+    addHighlight(character)
+    addNameTag(player, character)
+end
+
+local function onPlayerAdded(player)
+    if player.Character then
+        onCharacterAdded(player, player.Character)
+    end
+    player.CharacterAdded:Connect(function(character)
+        onCharacterAdded(player, character)
+    end)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+for _, player in ipairs(Players:GetPlayers()) do
+    onPlayerAdded(player)
+end
