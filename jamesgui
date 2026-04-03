@@ -285,29 +285,34 @@ end)
 
 local touchFling=false
 local flingConnection=nil
+local spin=nil
 
 createButton(playerPage,"Toggle Touch Fling",function()
     touchFling = not touchFling
     
+    local char=player.Character
+    if not char then return end
+    local hrp=char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
     if touchFling then
         status.Text="Touch Fling Enabled"
 
-        local char=player.Character
-        if not char then return end
-        local hrp=char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-
-        local bav=Instance.new("BodyAngularVelocity")
-        bav.Name="TouchFlingSpin"
-        bav.MaxTorque=Vector3.new(1e9,1e9,1e9)
-        bav.AngularVelocity=Vector3.new(0,9999,0)
-        bav.Parent=hrp
+        spin=Instance.new("BodyAngularVelocity")
+        spin.MaxTorque=Vector3.new(1e9,1e9,1e9)
+        spin.AngularVelocity=Vector3.new(0,3000,0)
+        spin.Parent=hrp
 
         flingConnection=hrp.Touched:Connect(function(hit)
-            if hit and hit.Parent and hit.Parent~=char then
-                local otherHRP=hit.Parent:FindFirstChild("HumanoidRootPart")
+            if not touchFling then return end
+
+            local otherChar=hit:FindFirstAncestorOfClass("Model")
+            local otherPlayer=Players:GetPlayerFromCharacter(otherChar)
+
+            if otherPlayer and otherPlayer~=player then
+                local otherHRP=otherChar:FindFirstChild("HumanoidRootPart")
                 if otherHRP then
-                    hrp.Velocity=Vector3.new(math.random(-300,300),500,math.random(-300,300))
+                    otherHRP.Velocity = (hrp.CFrame.LookVector * 200) + Vector3.new(0,100,0)
                 end
             end
         end)
@@ -315,13 +320,9 @@ createButton(playerPage,"Toggle Touch Fling",function()
     else
         status.Text="Touch Fling Disabled"
 
-        local char=player.Character
-        if char then
-            local hrp=char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local spin=hrp:FindFirstChild("TouchFlingSpin")
-                if spin then spin:Destroy() end
-            end
+        if spin then
+            spin:Destroy()
+            spin=nil
         end
 
         if flingConnection then
