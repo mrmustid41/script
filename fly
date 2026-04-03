@@ -5,7 +5,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 local flying = false
-local speed = 60
+local speed = 200
 
 local bodyVelocity
 local bodyGyro
