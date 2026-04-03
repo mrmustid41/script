@@ -283,52 +283,44 @@ createButton(playerPage,"Your Favorite Game",function()
     TeleportService:Teleport(84694807493536,player)
 end)
 
-local touchFlingOthers = false
-local touchConnection = nil
-local hitDebounce = {}
+local hiddenFling = false
+local flingLoop
 
-createButton(playerPage,"Toggle Touch Fling Others",function()
-    touchFlingOthers = not touchFlingOthers
-    status.Text = touchFlingOthers and "Touch Fling Enabled" or "Touch Fling Disabled"
+createButton(playerPage,"Toggle Touch Fling",function()
+    hiddenFling = not hiddenFling
+    status.Text = hiddenFling and "Touch Fling Enabled" or "Touch Fling Disabled"
 
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    if hiddenFling then
+        flingLoop = coroutine.create(function()
+            local lp = player
+            local movel = 0.1
 
-    if touchConnection then
-        touchConnection:Disconnect()
-        touchConnection = nil
-    end
+            while hiddenFling do
+                RunService.Heartbeat:Wait()
 
-    if touchFlingOthers then
-        touchConnection = hrp.Touched:Connect(function(hit)
-            if not touchFlingOthers then return end
+                local char = lp.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-            local otherChar = hit:FindFirstAncestorOfClass("Model")
-            local otherPlayer = Players:GetPlayerFromCharacter(otherChar)
+                if hrp then
+                    local vel = hrp.Velocity
 
-            if otherPlayer and otherPlayer ~= player then
-                if hitDebounce[otherPlayer] then return end
-                hitDebounce[otherPlayer] = true
+                    -- HUGE hidden force
+                    hrp.Velocity = vel * 10000 + Vector3.new(0,10000,0)
 
-                local otherHRP = otherChar:FindFirstChild("HumanoidRootPart")
-                if otherHRP then
-                    local dir = (otherHRP.Position - hrp.Position).Unit
+                    RunService.RenderStepped:Wait()
+                    hrp.Velocity = vel
 
-                    -- STRONG fling
-                    otherHRP.AssemblyLinearVelocity =
-                        dir * 500 + Vector3.new(0,250,0)
+                    RunService.Stepped:Wait()
+                    hrp.Velocity = vel + Vector3.new(0,movel,0)
 
-                    -- stop YOU from moving
-                    hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                    movel = -movel
                 end
-
-                task.delay(0.5,function()
-                    hitDebounce[otherPlayer] = nil
-                end)
             end
         end)
+
+        coroutine.resume(flingLoop)
+    else
+        hiddenFling = false
     end
 end)
 
