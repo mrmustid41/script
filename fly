@@ -1,0 +1,79 @@
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local flying = false
+local speed = 60
+
+local bodyVelocity
+local bodyGyro
+
+local function startFlying()
+    flying = true
+
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVelocity.Velocity = Vector3.zero
+    bodyVelocity.Parent = humanoidRootPart
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bodyGyro.CFrame = humanoidRootPart.CFrame
+    bodyGyro.Parent = humanoidRootPart
+end
+
+local function stopFlying()
+    flying = false
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+end
+
+-- Toggle with F
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        if flying then
+            stopFlying()
+        else
+            startFlying()
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not flying then return end
+
+    local camera = workspace.CurrentCamera
+    local moveDir = Vector3.zero
+
+    if UIS:IsKeyDown(Enum.KeyCode.W) then
+        moveDir += camera.CFrame.LookVector
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.S) then
+        moveDir -= camera.CFrame.LookVector
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.A) then
+        moveDir -= camera.CFrame.RightVector
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.D) then
+        moveDir += camera.CFrame.RightVector
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.Space) then
+        moveDir += Vector3.new(0, 1, 0)
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+        moveDir -= Vector3.new(0, 1, 0)
+    end
+
+    if moveDir.Magnitude > 0 then
+        bodyVelocity.Velocity = moveDir.Unit * speed
+    else
+        bodyVelocity.Velocity = Vector3.zero
+    end
+
+    bodyGyro.CFrame = camera.CFrame
+end)
