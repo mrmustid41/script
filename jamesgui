@@ -324,6 +324,23 @@ createButton(playerPage,"Toggle Touch Fling",function()
     end
 end)
 
+createButton(playerPage,"Spawn Platform",function()
+    local char = player.Character
+    if not char then return end
+    
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(10,1,10)
+    part.Anchored = true
+    part.Color = Color3.fromRGB(0,170,255)
+    part.Position = hrp.Position - Vector3.new(0,3,0)
+    part.Parent = workspace
+
+    status.Text = "Platform spawned"
+end)
+
 -- MISC (FIXED TP)
 local tpContainer = Instance.new("Frame")
 tpContainer.Size = UDim2.new(0.9,0,0,90)
