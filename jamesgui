@@ -1,28 +1,22 @@
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
--- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "LoaderUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Main frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 420, 0, 300)
-frame.Position = UDim2.new(0.5, -210, 0.5, -150)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.Size = UDim2.new(0,420,0,300)
+frame.Position = UDim2.new(0.5,-210,0.5,-150)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.Parent = gui
+Instance.new("UIStroke",frame).Color = Color3.fromRGB(0,170,255)
 
--- Border
-Instance.new("UIStroke", frame).Color = Color3.fromRGB(0,170,255)
-
--- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1,0,0,30)
 titleBar.BackgroundColor3 = Color3.fromRGB(15,15,15)
@@ -36,21 +30,19 @@ title.TextColor3 = Color3.fromRGB(0,170,255)
 title.TextScaled = true
 title.Parent = titleBar
 
--- Tabs bar
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1,0,0,30)
 tabBar.Position = UDim2.new(0,0,0,30)
 tabBar.BackgroundColor3 = Color3.fromRGB(20,20,20)
 tabBar.Parent = frame
 
--- Create scrolling page
 local function createPage()
     local scroll = Instance.new("ScrollingFrame")
     scroll.Size = UDim2.new(1,0,1,-85)
     scroll.Position = UDim2.new(0,0,0,60)
     scroll.BackgroundTransparency = 1
-    scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.ScrollBarThickness = 6
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.Parent = frame
 
     local layout = Instance.new("UIListLayout")
@@ -71,7 +63,6 @@ local miscPage = createPage()
 playerPage.Visible = false
 miscPage.Visible = false
 
--- Tab system
 local function createTab(text, xPos, page)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1/3,0,1,0)
@@ -90,11 +81,10 @@ local function createTab(text, xPos, page)
     end)
 end
 
-createTab("Exploits", 0, exploitsPage)
-createTab("Player", 1/3, playerPage)
-createTab("Misc", 2/3, miscPage)
+createTab("Exploits",0,exploitsPage)
+createTab("Player",1/3,playerPage)
+createTab("Misc",2/3,miscPage)
 
--- Status bar
 local statusBar = Instance.new("Frame")
 statusBar.Size = UDim2.new(1,0,0,25)
 statusBar.Position = UDim2.new(0,0,1,-25)
@@ -102,160 +92,309 @@ statusBar.BackgroundColor3 = Color3.fromRGB(15,15,15)
 statusBar.Parent = frame
 
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1,-10,1,0)
+status.Size = UDim2.new(0.7,0,1,0)
 status.Position = UDim2.new(0,5,0,0)
 status.BackgroundTransparency = 1
 status.Text = "Ready."
 status.TextColor3 = Color3.fromRGB(0,255,100)
-status.TextXAlignment = Enum.TextXAlignment.Left
 status.TextScaled = true
+status.TextXAlignment = Enum.TextXAlignment.Left
 status.Parent = statusBar
 
--- Button creator (AUTO STACK)
-local function createButton(parent, text, callback)
+local credits = Instance.new("TextLabel")
+credits.Size = UDim2.new(0.3,-5,1,0)
+credits.Position = UDim2.new(0.7,0,0,0)
+credits.BackgroundTransparency = 1
+credits.Text = "credits - james"
+credits.TextColor3 = Color3.fromRGB(0,170,255)
+credits.TextScaled = true
+credits.TextXAlignment = Enum.TextXAlignment.Right
+credits.Parent = statusBar
+
+local function createButton(parent,text,callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.9,0,0,35)
     btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    btn.TextColor3 = Color3.new(1,1,1)
     btn.Text = text
+    btn.TextColor3 = Color3.new(1,1,1)
     btn.TextScaled = true
     btn.Parent = parent
-
-    Instance.new("UIStroke", btn).Color = Color3.fromRGB(0,170,255)
-
+    Instance.new("UIStroke",btn).Color = Color3.fromRGB(0,170,255)
     btn.MouseButton1Click:Connect(callback)
 end
 
--- =========================
 -- EXPLOITS
--- =========================
-
-createButton(exploitsPage, "Enable ESP", function()
-    status.Text = "Injecting ESP..."
+createButton(exploitsPage,"Enable ESP",function()
+    status.Text="Injecting ESP..."
     task.wait(0.8)
-    local ok = pcall(function()
+    local ok=pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/mrmustid41/script/refs/heads/main/esp"))()
     end)
-    status.Text = ok and "ESP Enabled" or "ESP Failed"
+    status.Text=ok and "ESP Enabled" or "ESP Failed"
 end)
 
-createButton(exploitsPage, "Enable Fly", function()
-    status.Text = "Injecting Fly..."
+createButton(exploitsPage,"Enable Fly",function()
+    status.Text="Injecting Fly..."
     task.wait(0.8)
-    local ok = pcall(function()
+    local ok=pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/mrmustid41/script/refs/heads/main/fly"))()
     end)
-    status.Text = ok and "Fly Enabled" or "Fly Failed"
+    status.Text=ok and "Fly Enabled" or "Fly Failed"
 end)
 
--- Noclip
-local noclip = false
-
-createButton(exploitsPage, "Toggle Noclip", function()
-    noclip = not noclip
-    status.Text = noclip and "Noclip Enabled" or "Noclip Disabled"
+local noclip=false
+createButton(exploitsPage,"Toggle Noclip",function()
+    noclip=not noclip
+    status.Text=noclip and "Noclip Enabled" or "Noclip Disabled"
 end)
 
 RunService.Stepped:Connect(function()
     if noclip and player.Character then
-        for _, part in pairs(player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+        for _,v in pairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide=false
             end
         end
     end
 end)
 
--- =========================
--- PLAYER
--- =========================
+-- FLING (UNCHANGED)
+local selectedPlayer=nil
 
-createButton(playerPage, "Speed Boost", function()
-    local h = player.Character and player.Character:FindFirstChild("Humanoid")
-    if h then h.WalkSpeed = 50 end
-    status.Text = "Speed Boosted"
+local container=Instance.new("Frame")
+container.Size=UDim2.new(0.9,0,0,90)
+container.BackgroundTransparency=1
+container.Parent=exploitsPage
+
+local box=Instance.new("TextBox")
+box.Size=UDim2.new(0.7,0,0,40)
+box.BackgroundColor3=Color3.fromRGB(40,40,40)
+box.PlaceholderText="Enter player..."
+box.TextColor3=Color3.new(1,1,1)
+box.TextScaled=true
+box.Parent=container
+Instance.new("UIStroke",box).Color=Color3.fromRGB(0,170,255)
+
+local btn=Instance.new("TextButton")
+btn.Size=UDim2.new(0.3,0,0,40)
+btn.Position=UDim2.new(0.7,5,0,0)
+btn.BackgroundColor3=Color3.fromRGB(40,40,40)
+btn.Text="Fling"
+btn.TextScaled=true
+btn.Parent=container
+Instance.new("UIStroke",btn).Color=Color3.fromRGB(0,170,255)
+
+local avatar=Instance.new("ImageLabel")
+avatar.Size=UDim2.new(0,40,0,40)
+avatar.Position=UDim2.new(0,0,0,45)
+avatar.BackgroundTransparency=1
+avatar.Parent=container
+
+local nameLabel=Instance.new("TextLabel")
+nameLabel.Size=UDim2.new(1,-45,0,40)
+nameLabel.Position=UDim2.new(0,45,0,45)
+nameLabel.BackgroundTransparency=1
+nameLabel.Text="No player selected"
+nameLabel.TextScaled=true
+nameLabel.TextXAlignment=Enum.TextXAlignment.Left
+nameLabel.TextColor3=Color3.new(1,1,1)
+nameLabel.Parent=container
+
+box:GetPropertyChangedSignal("Text"):Connect(function()
+    local input=box.Text:lower()
+    selectedPlayer=nil
+
+    for _,v in pairs(Players:GetPlayers()) do
+        if v.Name:lower():sub(1,#input)==input then selectedPlayer=v break end
+    end
+
+    if not selectedPlayer then
+        for _,v in pairs(Players:GetPlayers()) do
+            if v.Name:lower():find(input) then selectedPlayer=v break end
+        end
+    end
+
+    if selectedPlayer then
+        nameLabel.Text=selectedPlayer.Name
+        avatar.Image=Players:GetUserThumbnailAsync(selectedPlayer.UserId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size100x100)
+    else
+        nameLabel.Text="No match"
+        avatar.Image=""
+    end
 end)
 
-createButton(playerPage, "Reset Speed", function()
-    local h = player.Character and player.Character:FindFirstChild("Humanoid")
-    if h then h.WalkSpeed = 16 end
-    status.Text = "Speed Reset"
+btn.MouseButton1Click:Connect(function()
+    if not selectedPlayer then status.Text="No player selected" return end
+
+    local myHRP=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local targetHRP=selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myHRP or not targetHRP then return end
+
+    local original=myHRP.CFrame
+    status.Text="Flinging "..selectedPlayer.Name
+
+    local bv=Instance.new("BodyVelocity")
+    bv.MaxForce=Vector3.new(1e9,1e9,1e9)
+    bv.Parent=myHRP
+
+    local bav=Instance.new("BodyAngularVelocity")
+    bav.MaxTorque=Vector3.new(1e9,1e9,1e9)
+    bav.AngularVelocity=Vector3.new(0,9999,0)
+    bav.Parent=myHRP
+
+    local start=tick()
+    while tick()-start<5 do
+        RunService.Stepped:Wait()
+        myHRP.CFrame=targetHRP.CFrame*CFrame.new(0,0,1)
+        bv.Velocity=Vector3.new(0,600,0)
+    end
+
+    bv:Destroy()
+    bav:Destroy()
+    task.wait(0.1)
+    myHRP.CFrame=original
+    status.Text="Returned"
 end)
 
-createButton(playerPage, "High Jump", function()
-    local h = player.Character and player.Character:FindFirstChild("Humanoid")
-    if h then h.JumpPower = 100 end
-    status.Text = "Jump Boosted"
+-- PLAYER TAB
+createButton(playerPage,"Speed Boost",function()
+    local h=player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.WalkSpeed=50 status.Text="Speed Boosted" end
 end)
 
-createButton(playerPage, "Reset Jump", function()
-    local h = player.Character and player.Character:FindFirstChild("Humanoid")
-    if h then h.JumpPower = 50 end
-    status.Text = "Jump Reset"
+createButton(playerPage,"Reset Speed",function()
+    local h=player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.WalkSpeed=16 status.Text="Speed Reset" end
 end)
 
-createButton(playerPage, "Your Favorite Game", function()
-    status.Text = "Finding your favorite game..."
+createButton(playerPage,"Jump Boost",function()
+    local h=player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.JumpPower=100 status.Text="Jump Boosted" end
+end)
+
+createButton(playerPage,"Reset Jump",function()
+    local h=player.Character and player.Character:FindFirstChild("Humanoid")
+    if h then h.JumpPower=50 status.Text="Jump Reset" end
+end)
+
+createButton(playerPage,"Your Favorite Game",function()
+    status.Text="Finding your favorite game..."
     task.wait(1)
-    status.Text = "Found it!"
-    task.wait(1)
-    TeleportService:Teleport(84694807493536, player)
+    TeleportService:Teleport(84694807493536,player)
 end)
 
--- =========================
--- MISC TAB
--- =========================
+-- MISC (FIXED TP)
+local tpContainer = Instance.new("Frame")
+tpContainer.Size = UDim2.new(0.9,0,0,90)
+tpContainer.BackgroundTransparency = 1
+tpContainer.Parent = miscPage
 
-createButton(miscPage, "Reset Character", function()
+local tpBox = Instance.new("TextBox")
+tpBox.Size = UDim2.new(0.7,0,0,40)
+tpBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tpBox.PlaceholderText = "Teleport to player..."
+tpBox.TextColor3 = Color3.new(1,1,1)
+tpBox.TextScaled = true
+tpBox.Parent = tpContainer
+Instance.new("UIStroke",tpBox).Color = Color3.fromRGB(0,170,255)
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(0.3,0,0,40)
+tpBtn.Position = UDim2.new(0.7,5,0,0)
+tpBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tpBtn.Text = "TP"
+tpBtn.TextScaled = true
+tpBtn.Parent = tpContainer
+Instance.new("UIStroke",tpBtn).Color = Color3.fromRGB(0,170,255)
+
+local tpAvatar = Instance.new("ImageLabel")
+tpAvatar.Size = UDim2.new(0,40,0,40)
+tpAvatar.Position = UDim2.new(0,0,0,45)
+tpAvatar.BackgroundTransparency = 1
+tpAvatar.Parent = tpContainer
+
+local tpName = Instance.new("TextLabel")
+tpName.Size = UDim2.new(1,-45,0,40)
+tpName.Position = UDim2.new(0,45,0,45)
+tpName.BackgroundTransparency = 1
+tpName.Text = "No player selected"
+tpName.TextScaled = true
+tpName.TextXAlignment = Enum.TextXAlignment.Left
+tpName.TextColor3 = Color3.new(1,1,1)
+tpName.Parent = tpContainer
+
+local tpSelected=nil
+
+tpBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local input=tpBox.Text:lower()
+    tpSelected=nil
+
+    for _,v in pairs(Players:GetPlayers()) do
+        if v.Name:lower():sub(1,#input)==input then tpSelected=v break end
+    end
+
+    if not tpSelected then
+        for _,v in pairs(Players:GetPlayers()) do
+            if v.Name:lower():find(input) then tpSelected=v break end
+        end
+    end
+
+    if tpSelected then
+        tpName.Text=tpSelected.Name
+        tpAvatar.Image=Players:GetUserThumbnailAsync(tpSelected.UserId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size100x100)
+    else
+        tpName.Text="No match"
+        tpAvatar.Image=""
+    end
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    if not tpSelected then status.Text="Player not found" return end
+    local myHRP=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local targetHRP=tpSelected.Character and tpSelected.Character:FindFirstChild("HumanoidRootPart")
+    if myHRP and targetHRP then
+        myHRP.CFrame=targetHRP.CFrame+Vector3.new(2,0,0)
+        status.Text="Teleported to "..tpSelected.Name
+    end
+end)
+
+createButton(miscPage,"Reset Character",function()
     player.Character:BreakJoints()
-    status.Text = "Character Reset"
 end)
 
-createButton(miscPage, "Rejoin Game", function()
-    TeleportService:Teleport(game.PlaceId, player)
-    status.Text = "Rejoining..."
+createButton(miscPage,"Rejoin Game",function()
+    TeleportService:Teleport(game.PlaceId,player)
 end)
 
--- =========================
--- DRAG
--- =========================
-local dragging, dragStart, startPos
+local dragging=false
+local dragStart,startPos
 
 titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
+    if input.UserInputType==Enum.UserInputType.MouseButton1 then
+        dragging=true
+        dragStart=input.Position
+        startPos=frame.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+    if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
+        local delta=input.Position-dragStart
+        frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
+    if input.UserInputType==Enum.UserInputType.MouseButton1 then
+        dragging=false
     end
 end)
 
--- =========================
--- TOGGLE (K)
--- =========================
-local visible = true
-
-UserInputService.InputBegan:Connect(function(input, gp)
+local visible=true
+UserInputService.InputBegan:Connect(function(input,gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.K then
-        visible = not visible
-        frame.Visible = visible
+    if input.KeyCode==Enum.KeyCode.K then
+        visible=not visible
+        frame.Visible=visible
     end
 end)
