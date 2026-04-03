@@ -3,17 +3,60 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 local flying = false
 local speed = 60
 
 local bodyVelocity
 local bodyGyro
+local humanoidRootPart
+local humanoid
 
+-- Setup character
+local function setupCharacter(char)
+    humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+    humanoid = char:WaitForChild("Humanoid")
+
+    -- If flying before death, restore
+    if flying then
+        task.wait(0.5)
+
+        -- Force stable state
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyVelocity.Velocity = Vector3.zero
+        bodyVelocity.Parent = humanoidRootPart
+
+        bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+        bodyGyro.CFrame = humanoidRootPart.CFrame
+        bodyGyro.Parent = humanoidRootPart
+    end
+end
+
+-- Initial character
+setupCharacter(player.Character or player.CharacterAdded:Wait())
+
+-- Respawn handling
+player.CharacterAdded:Connect(function(char)
+    setupCharacter(char)
+end)
+
+-- Start flying
 local function startFlying()
+    if flying then return end
     flying = true
+
+    if not humanoidRootPart or not humanoid then return end
+
+    -- Disable falling animations
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 
     bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
@@ -26,15 +69,24 @@ local function startFlying()
     bodyGyro.Parent = humanoidRootPart
 end
 
+-- Stop flying
 local function stopFlying()
     flying = false
+
     if bodyVelocity then bodyVelocity:Destroy() end
     if bodyGyro then bodyGyro:Destroy() end
+
+    if humanoid then
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
 end
 
 -- Toggle with F
 UIS.InputBegan:Connect(function(input, processed)
     if processed then return end
+
     if input.KeyCode == Enum.KeyCode.F then
         if flying then
             stopFlying()
@@ -44,8 +96,12 @@ UIS.InputBegan:Connect(function(input, processed)
     end
 end)
 
+-- Movement loop
 RunService.RenderStepped:Connect(function()
-    if not flying then return end
+    if not flying or not humanoidRootPart or not humanoid then return end
+
+    -- Keep animation locked (VERY IMPORTANT)
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
     local camera = workspace.CurrentCamera
     local moveDir = Vector3.zero
@@ -69,11 +125,15 @@ RunService.RenderStepped:Connect(function()
         moveDir -= Vector3.new(0, 1, 0)
     end
 
-    if moveDir.Magnitude > 0 then
-        bodyVelocity.Velocity = moveDir.Unit * speed
-    else
-        bodyVelocity.Velocity = Vector3.zero
+    if bodyVelocity then
+        if moveDir.Magnitude > 0 then
+            bodyVelocity.Velocity = moveDir.Unit * speed
+        else
+            bodyVelocity.Velocity = Vector3.zero
+        end
     end
 
-    bodyGyro.CFrame = camera.CFrame
+    if bodyGyro then
+        bodyGyro.CFrame = camera.CFrame
+    end
 end)
