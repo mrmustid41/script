@@ -5,7 +5,8 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 local flying = false
-local speed = 200
+local speed = 2000  -- Increased from 200 to 2000
+local forceMultiplier = 1e7 -- Increased max force for faster movement
 
 local bodyVelocity
 local bodyGyro
@@ -17,31 +18,26 @@ local function setupCharacter(char)
     humanoidRootPart = char:WaitForChild("HumanoidRootPart")
     humanoid = char:WaitForChild("Humanoid")
 
-    -- If flying before death, restore
     if flying then
         task.wait(0.5)
-
-        -- Force stable state
         humanoid:ChangeState(Enum.HumanoidStateType.Physics)
         humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
         humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 
         bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyVelocity.MaxForce = Vector3.new(forceMultiplier, forceMultiplier, forceMultiplier)
         bodyVelocity.Velocity = Vector3.zero
         bodyVelocity.Parent = humanoidRootPart
 
         bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+        bodyGyro.MaxTorque = Vector3.new(forceMultiplier, forceMultiplier, forceMultiplier)
         bodyGyro.CFrame = humanoidRootPart.CFrame
         bodyGyro.Parent = humanoidRootPart
     end
 end
 
--- Initial character
 setupCharacter(player.Character or player.CharacterAdded:Wait())
 
--- Respawn handling
 player.CharacterAdded:Connect(function(char)
     setupCharacter(char)
 end)
@@ -53,18 +49,17 @@ local function startFlying()
 
     if not humanoidRootPart or not humanoid then return end
 
-    -- Disable falling animations
     humanoid:ChangeState(Enum.HumanoidStateType.Physics)
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
     humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 
     bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVelocity.MaxForce = Vector3.new(forceMultiplier, forceMultiplier, forceMultiplier)
     bodyVelocity.Velocity = Vector3.zero
     bodyVelocity.Parent = humanoidRootPart
 
     bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bodyGyro.MaxTorque = Vector3.new(forceMultiplier, forceMultiplier, forceMultiplier)
     bodyGyro.CFrame = humanoidRootPart.CFrame
     bodyGyro.Parent = humanoidRootPart
 end
@@ -100,7 +95,6 @@ end)
 RunService.RenderStepped:Connect(function()
     if not flying or not humanoidRootPart or not humanoid then return end
 
-    -- Keep animation locked (VERY IMPORTANT)
     humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
     local camera = workspace.CurrentCamera
