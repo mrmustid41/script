@@ -6,20 +6,28 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-print("🚀 ATM FARM FINAL (PLATFORM FIX + TOGGLE)")
+print("🚀 ATM FARM FINAL (SAFE EMERGENCY)")
 
 -- SETTINGS
 local UNDER_OFFSET = Vector3.new(0,-6,0)
 local farming = false
 
--- STORAGE
+-- CAMERA
+local CAMERA_HEIGHT = 7
+local CAMERA_BACK = 4
+
+-- STATE
 local highlights = {}
 local bodyVel
 local platform
-local lastFoundTime = tick()
+
+-- 🔥 FAIL SYSTEM
+local failCount = 0
+local emergencyUsed = false
+local WAIT_AFTER_EMERGENCY = 10
 
 --------------------------------------------------
--- LOCK (ANTI FLOAT)
+-- LOCK
 --------------------------------------------------
 local function startLock()
     local hrp = player.Character.HumanoidRootPart
@@ -40,7 +48,7 @@ local function stopLock()
 end
 
 --------------------------------------------------
--- PLATFORM (FIXED - PERSISTENT)
+-- PLATFORM (NO STACKING)
 --------------------------------------------------
 local function createPlatform(pos, color)
     if not platform then
@@ -49,7 +57,6 @@ local function createPlatform(pos, color)
         platform.Anchored = true
         platform.CanCollide = true
         platform.Transparency = 0.3
-        platform.Name = "TempPlatform"
         platform.Parent = workspace
     end
 
@@ -58,24 +65,22 @@ local function createPlatform(pos, color)
 end
 
 --------------------------------------------------
--- EMERGENCY TP
+-- EMERGENCY TP (ONCE)
 --------------------------------------------------
 local function emergencyTeleport()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
     local newPos = hrp.Position + Vector3.new(0,100,0)
-
     hrp.CFrame = CFrame.new(newPos)
 
     createPlatform(newPos - Vector3.new(0,3,0), Color3.fromRGB(255,0,0))
 
-    print("🚨 Emergency TP")
+    print("🚨 Emergency TP triggered")
 end
 
 --------------------------------------------------
--- GET ATM FOLDER
+-- GET FOLDER
 --------------------------------------------------
 local function getFolder()
     return workspace:FindFirstChild("Game")
@@ -84,7 +89,7 @@ local function getFolder()
 end
 
 --------------------------------------------------
--- FIND VALID ATM
+-- FIND ATM
 --------------------------------------------------
 local function getValid()
     local folder = getFolder()
@@ -185,7 +190,6 @@ end)
 --------------------------------------------------
 local function snap(atm)
     local hrp = player.Character.HumanoidRootPart
-
     startLock()
 
     RunService:BindToRenderStep("ATM_LOCK", Enum.RenderPriority.Character.Value + 1, function()
@@ -194,10 +198,13 @@ local function snap(atm)
             return
         end
 
-        local targetPos = atm.Position + UNDER_OFFSET
-        hrp.CFrame = CFrame.new(targetPos)
+        -- under ATM
+        hrp.CFrame = CFrame.new(atm.Position + UNDER_OFFSET)
 
-        camera.CFrame = CFrame.new(camera.CFrame.Position, atm.Position + Vector3.new(0,3,0))
+        -- fake camera above ATM
+        local camPos = atm.Position + Vector3.new(0, CAMERA_HEIGHT, CAMERA_BACK)
+        local lookPos = atm.Position + Vector3.new(0,1,0)
+        camera.CFrame = CFrame.new(camPos, lookPos)
 
         if bodyVel then
             bodyVel.Velocity = Vector3.zero
@@ -225,15 +232,23 @@ task.spawn(function()
         local spawner, atm = getValid()
 
         if spawner and atm then
-            lastFoundTime = tick()
+            -- ✅ RESET FAIL SYSTEM
+            failCount = 0
+            emergencyUsed = false
         else
-            if tick() - lastFoundTime > 10 then
+            failCount += 1
+            warn("❌ No ATM (fail " .. failCount .. ")")
+
+            if failCount >= 2 and not emergencyUsed then
                 emergencyTeleport()
-                lastFoundTime = tick()
+                emergencyUsed = true
+
+                print("⏳ Waiting after emergency...")
+                task.wait(WAIT_AFTER_EMERGENCY)
+            else
+                task.wait(2)
             end
 
-            warn("❌ No ATM")
-            task.wait(2)
             continue
         end
 
@@ -245,7 +260,6 @@ task.spawn(function()
         hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
         task.wait(0.3)
 
-        -- PLATFORM UNDER ATM (PERSISTENT)
         createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
 
         snap(atm)
@@ -265,7 +279,7 @@ task.spawn(function()
 end)
 
 --------------------------------------------------
--- TOGGLE BUTTON (DRAGGABLE)
+-- TOGGLE BUTTON
 --------------------------------------------------
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
@@ -280,36 +294,6 @@ button.Parent = gui
 
 Instance.new("UICorner", button)
 
--- DRAG
-local dragging, dragStart, startPos
-
-button.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = button.Position
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        button.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
--- TOGGLE
 button.MouseButton1Click:Connect(function()
     farming = not farming
 
@@ -318,7 +302,6 @@ button.MouseButton1Click:Connect(function()
     if farming then
         button.Text = "ON"
         button.BackgroundColor3 = Color3.fromRGB(50,200,50)
-        lastFoundTime = tick()
     else
         button.Text = "OFF"
         button.BackgroundColor3 = Color3.fromRGB(200,50,50)
