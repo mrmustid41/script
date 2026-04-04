@@ -6,11 +6,12 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-print("🚀 ATM FARM FINAL (SAFE EMERGENCY)")
+print("🚀 ATM FARM FINAL + AUTO TP MONEY BAG")
 
 -- SETTINGS
 local UNDER_OFFSET = Vector3.new(0,-6,0)
 local farming = false
+local autoTP = false
 
 -- CAMERA
 local CAMERA_HEIGHT = 7
@@ -26,11 +27,16 @@ local failCount = 0
 local emergencyUsed = false
 local WAIT_AFTER_EMERGENCY = 10
 
+-- MONEY BAG TP SETTINGS
+local REQUIRED_BAGS = 10
+local MONEYBAG_TP_POS = Vector3.new(-2542.02, 14.89, 4030.51)
+
 --------------------------------------------------
 -- LOCK
 --------------------------------------------------
 local function startLock()
-    local hrp = player.Character.HumanoidRootPart
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
     if bodyVel then bodyVel:Destroy() end
 
@@ -189,7 +195,8 @@ end)
 -- SNAP + CAMERA
 --------------------------------------------------
 local function snap(atm)
-    local hrp = player.Character.HumanoidRootPart
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
     startLock()
 
     RunService:BindToRenderStep("ATM_LOCK", Enum.RenderPriority.Character.Value + 1, function()
@@ -218,95 +225,143 @@ local function stopSnap()
 end
 
 --------------------------------------------------
+-- COUNT MONEY BAGS
+--------------------------------------------------
+local function countBags()
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then return 0 end
+
+    local count = 0
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item.Name == "CriminalMoneyBag" then
+            count += 1
+        end
+    end
+    return count
+end
+
+--------------------------------------------------
+-- TELEPORT TO MONEYBAG LOCATION
+--------------------------------------------------
+local function teleportMoneyBag()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(MONEYBAG_TP_POS)
+        print("✅ Teleported due to 10 money bags!")
+    end
+end
+
+--------------------------------------------------
 -- MAIN LOOP
 --------------------------------------------------
 task.spawn(function()
     while true do
-        if not farming then
-            task.wait(1)
-            continue
-        end
+        -- ATM FARM
+        if farming then
+            updateESP()
 
-        updateESP()
+            local spawner, atm = getValid()
 
-        local spawner, atm = getValid()
-
-        if spawner and atm then
-            -- ✅ RESET FAIL SYSTEM
-            failCount = 0
-            emergencyUsed = false
-        else
-            failCount += 1
-            warn("❌ No ATM (fail " .. failCount .. ")")
-
-            if failCount >= 2 and not emergencyUsed then
-                emergencyTeleport()
-                emergencyUsed = true
-
-                print("⏳ Waiting after emergency...")
-                task.wait(WAIT_AFTER_EMERGENCY)
+            if spawner and atm then
+                failCount = 0
+                emergencyUsed = false
             else
-                task.wait(2)
+                failCount += 1
+                warn("❌ No ATM (fail " .. failCount .. ")")
+
+                if failCount >= 2 and not emergencyUsed then
+                    emergencyTeleport()
+                    emergencyUsed = true
+                    print("⏳ Waiting after emergency...")
+                    task.wait(WAIT_AFTER_EMERGENCY)
+                else
+                    task.wait(2)
+                end
+
+                continue
             end
 
-            continue
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not hrp then continue end
+
+            hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
+            task.wait(0.3)
+
+            createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
+            snap(atm)
+
+            local prompt = getPrompt(atm)
+            if prompt then
+                prompt.MaxActivationDistance = 100
+                holdPrompt(prompt, 10)
+                print("✅ ATM DONE")
+            end
+            stopSnap()
+            task.wait(5)
         end
 
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
-
-        print("📍 TP to spawner")
-
-        hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
-        task.wait(0.3)
-
-        createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
-
-        snap(atm)
-
-        local prompt = getPrompt(atm)
-
-        if prompt then
-            prompt.MaxActivationDistance = 100
-            holdPrompt(prompt, 10)
-            print("✅ ATM DONE")
+        -- AUTO MONEY BAG TELEPORT
+        if autoTP then
+            if countBags() >= REQUIRED_BAGS then
+                teleportMoneyBag()
+                autoTP = false -- stop after teleporting
+            end
         end
 
-        stopSnap()
-
-        task.wait(5)
+        task.wait(0.5)
     end
 end)
 
 --------------------------------------------------
--- TOGGLE BUTTON
+-- UI BUTTONS
 --------------------------------------------------
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
 
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0,100,0,40)
-button.Position = UDim2.new(0,20,0,200)
-button.Text = "OFF"
-button.BackgroundColor3 = Color3.fromRGB(200,50,50)
-button.TextScaled = true
-button.Parent = gui
+-- ATM FARM TOGGLE
+local farmButton = Instance.new("TextButton")
+farmButton.Size = UDim2.new(0,100,0,40)
+farmButton.Position = UDim2.new(0,20,0,200)
+farmButton.Text = "ATM OFF"
+farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+farmButton.TextScaled = true
+farmButton.Parent = gui
+Instance.new("UICorner", farmButton).CornerRadius = UDim.new(1,0) -- capsule shape
 
-Instance.new("UICorner", button)
-
-button.MouseButton1Click:Connect(function()
+farmButton.MouseButton1Click:Connect(function()
     farming = not farming
-
-    print("Toggle:", farming)
-
     if farming then
-        button.Text = "ON"
-        button.BackgroundColor3 = Color3.fromRGB(50,200,50)
+        farmButton.Text = "ATM ON"
+        farmButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
+        print("🔔 ATM Farm ENABLED")
     else
-        button.Text = "OFF"
-        button.BackgroundColor3 = Color3.fromRGB(200,50,50)
-
+        farmButton.Text = "ATM OFF"
+        farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
         stopSnap()
         stopLock()
+        print("🔔 ATM Farm DISABLED")
+    end
+end)
+
+-- MONEY BAG AUTO TP TOGGLE
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0,140,0,40)
+tpButton.Position = UDim2.new(0,20,0,260)
+tpButton.Text = "TP OFF"
+tpButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+tpButton.TextScaled = true
+tpButton.Parent = gui
+Instance.new("UICorner", tpButton).CornerRadius = UDim.new(1,0)
+
+tpButton.MouseButton1Click:Connect(function()
+    autoTP = not autoTP
+    if autoTP then
+        tpButton.Text = "TP ON"
+        tpButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
+        print("🔔 Auto TP ENABLED")
+    else
+        tpButton.Text = "TP OFF"
+        tpButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+        print("🔔 Auto TP DISABLED")
     end
 end)
