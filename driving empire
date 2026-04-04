@@ -343,25 +343,29 @@ farmButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- MONEY BAG AUTO TP TOGGLE
+-- MONEY BAG MANUAL TP BUTTON
 local tpButton = Instance.new("TextButton")
 tpButton.Size = UDim2.new(0,140,0,40)
 tpButton.Position = UDim2.new(0,20,0,260)
-tpButton.Text = "TP OFF"
-tpButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+tpButton.Text = "TP TO SELL"
+tpButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
 tpButton.TextScaled = true
 tpButton.Parent = gui
+
 Instance.new("UICorner", tpButton).CornerRadius = UDim.new(1,0)
 
-tpButton.MouseButton1Click:Connect(function()
-    autoTP = not autoTP
-    if autoTP then
-        tpButton.Text = "TP ON"
-        tpButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
-        print("🔔 Auto TP ENABLED")
+-- TELEPORT FUNCTION
+local function teleportToSell()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(-2542.02, 14.89, 4030.51)
+        print("📦 Teleported to sell location")
     else
-        tpButton.Text = "TP OFF"
-        tpButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
-        print("🔔 Auto TP DISABLED")
+        warn("No character / HRP found")
     end
+end
+
+-- BUTTON CLICK = TELEPORT
+tpButton.MouseButton1Click:Connect(function()
+    teleportToSell()
 end)
