@@ -31,6 +31,23 @@ local WAIT_AFTER_EMERGENCY = 10
 local REQUIRED_BAGS = 10
 local MONEYBAG_TP_POS = Vector3.new(-2542.02, 14.89, 4030.51)
 
+-- ⏱️ TIMEOUT SYSTEM (NEW)
+local LAST_ACTION_TIME = tick()
+local TIMEOUT = 20
+local TIMEOUT_POS = Vector3.new(-765.1, 592.86, 3728.12)
+
+--------------------------------------------------
+-- ⏱️ TIMEOUT TP (NEW)
+--------------------------------------------------
+local function timeoutTeleport()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(TIMEOUT_POS)
+        print("⏱️ Timeout TP triggered (no ATM activity)")
+        LAST_ACTION_TIME = tick()
+    end
+end
+
 --------------------------------------------------
 -- LOCK
 --------------------------------------------------
@@ -205,10 +222,8 @@ local function snap(atm)
             return
         end
 
-        -- under ATM
         hrp.CFrame = CFrame.new(atm.Position + UNDER_OFFSET)
 
-        -- fake camera above ATM
         local camPos = atm.Position + Vector3.new(0, CAMERA_HEIGHT, CAMERA_BACK)
         local lookPos = atm.Position + Vector3.new(0,1,0)
         camera.CFrame = CFrame.new(camPos, lookPos)
@@ -256,7 +271,6 @@ end
 --------------------------------------------------
 task.spawn(function()
     while true do
-        -- ATM FARM
         if farming then
             updateESP()
 
@@ -285,6 +299,8 @@ task.spawn(function()
             if not hrp then continue end
 
             hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
+            LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
+
             task.wait(0.3)
 
             createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
@@ -295,6 +311,7 @@ task.spawn(function()
                 prompt.MaxActivationDistance = 100
                 holdPrompt(prompt, 10)
                 print("✅ ATM DONE")
+                LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
             end
             stopSnap()
             task.wait(5)
@@ -304,8 +321,13 @@ task.spawn(function()
         if autoTP then
             if countBags() >= REQUIRED_BAGS then
                 teleportMoneyBag()
-                autoTP = false -- stop after teleporting
+                autoTP = false
             end
+        end
+
+        -- ⏱️ TIMEOUT FAILSAFE (NEW)
+        if tick() - LAST_ACTION_TIME >= TIMEOUT then
+            timeoutTeleport()
         end
 
         task.wait(0.5)
@@ -313,12 +335,11 @@ task.spawn(function()
 end)
 
 --------------------------------------------------
--- UI BUTTONS
+-- UI BUTTONS (UNCHANGED)
 --------------------------------------------------
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
 
--- ATM FARM TOGGLE
 local farmButton = Instance.new("TextButton")
 farmButton.Size = UDim2.new(0,100,0,40)
 farmButton.Position = UDim2.new(0,20,0,200)
@@ -326,24 +347,21 @@ farmButton.Text = "ATM OFF"
 farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
 farmButton.TextScaled = true
 farmButton.Parent = gui
-Instance.new("UICorner", farmButton).CornerRadius = UDim.new(1,0) -- capsule shape
+Instance.new("UICorner", farmButton).CornerRadius = UDim.new(1,0)
 
 farmButton.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
         farmButton.Text = "ATM ON"
         farmButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
-        print("🔔 ATM Farm ENABLED")
     else
         farmButton.Text = "ATM OFF"
         farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
         stopSnap()
         stopLock()
-        print("🔔 ATM Farm DISABLED")
     end
 end)
 
--- MONEY BAG MANUAL TP BUTTON
 local tpButton = Instance.new("TextButton")
 tpButton.Size = UDim2.new(0,140,0,40)
 tpButton.Position = UDim2.new(0,20,0,260)
@@ -351,21 +369,11 @@ tpButton.Text = "TP TO SELL"
 tpButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
 tpButton.TextScaled = true
 tpButton.Parent = gui
-
 Instance.new("UICorner", tpButton).CornerRadius = UDim.new(1,0)
 
--- TELEPORT FUNCTION
-local function teleportToSell()
+tpButton.MouseButton1Click:Connect(function()
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = CFrame.new(-2542.02, 14.89, 4030.51)
-        print("📦 Teleported to sell location")
-    else
-        warn("No character / HRP found")
     end
-end
-
--- BUTTON CLICK = TELEPORT
-tpButton.MouseButton1Click:Connect(function()
-    teleportToSell()
 end)
