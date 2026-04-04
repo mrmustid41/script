@@ -371,404 +371,57 @@ tpButton.TextScaled = true
 tpButton.Parent = gui
 Instance.new("UICorner", tpButton).CornerRadius = UDim.new(1,0)
 
--- SERVICES
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-
-local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
-
-print("🚀 ATM FARM FINAL + AUTO TP MONEY BAG")
-
--- SETTINGS
-local UNDER_OFFSET = Vector3.new(0,-6,0)
-local farming = false
-local autoTP = false
-
--- CAMERA
-local CAMERA_HEIGHT = 7
-local CAMERA_BACK = 4
-
--- STATE
-local highlights = {}
-local bodyVel
-local platform
-
--- 🔥 FAIL SYSTEM
-local failCount = 0
-local emergencyUsed = false
-local WAIT_AFTER_EMERGENCY = 10
-
--- MONEY BAG TP SETTINGS
-local REQUIRED_BAGS = 10
-local MONEYBAG_TP_POS = Vector3.new(-2542.02, 14.89, 4030.51)
-
--- ⏱️ TIMEOUT SYSTEM (NEW)
-local LAST_ACTION_TIME = tick()
-local TIMEOUT = 20
-local TIMEOUT_POS = Vector3.new(-765.1, 592.86, 3728.12)
-
---------------------------------------------------
--- ⏱️ TIMEOUT TP (NEW)
---------------------------------------------------
-local function timeoutTeleport()
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(TIMEOUT_POS)
-        print("⏱️ Timeout TP triggered (no ATM activity)")
-        LAST_ACTION_TIME = tick()
-    end
-end
-
---------------------------------------------------
--- LOCK
---------------------------------------------------
-local function startLock()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if bodyVel then bodyVel:Destroy() end
-
-    bodyVel = Instance.new("BodyVelocity")
-    bodyVel.MaxForce = Vector3.new(1e10,1e10,1e10)
-    bodyVel.Velocity = Vector3.zero
-    bodyVel.Parent = hrp
-end
-
-local function stopLock()
-    if bodyVel then
-        bodyVel:Destroy()
-        bodyVel = nil
-    end
-end
-
---------------------------------------------------
--- PLATFORM (NO STACKING)
---------------------------------------------------
-local function createPlatform(pos, color)
-    if not platform then
-        platform = Instance.new("Part")
-        platform.Size = Vector3.new(14,1,14)
-        platform.Anchored = true
-        platform.CanCollide = true
-        platform.Transparency = 0.3
-        platform.Parent = workspace
-    end
-
-    platform.Color = color or Color3.fromRGB(0,255,0)
-    platform.Position = pos
-end
-
---------------------------------------------------
--- EMERGENCY TP (ONCE)
---------------------------------------------------
-local function emergencyTeleport()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local newPos = hrp.Position + Vector3.new(0,100,0)
-    hrp.CFrame = CFrame.new(newPos)
-
-    createPlatform(newPos - Vector3.new(0,3,0), Color3.fromRGB(255,0,0))
-
-    print("🚨 Emergency TP triggered")
-end
-
---------------------------------------------------
--- GET FOLDER
---------------------------------------------------
-local function getFolder()
-    return workspace:FindFirstChild("Game")
-        and workspace.Game:FindFirstChild("Jobs")
-        and workspace.Game.Jobs:FindFirstChild("CriminalATMSpawners")
-end
-
---------------------------------------------------
--- FIND ATM
---------------------------------------------------
-local function getValid()
-    local folder = getFolder()
-    if not folder then return end
-
-    for _, spawner in ipairs(folder:GetChildren()) do
-        if spawner.Name == "CriminalATMSpawner" and #spawner:GetChildren() > 0 then
-
-            local atmModel = spawner:FindFirstChild("CriminalATM")
-            local atmPart = atmModel and atmModel:FindFirstChild("ATM")
-
-            if atmPart then
-                local arc = atmPart:FindFirstChild("ATMElectricArc", true)
-                local billboard = atmPart:FindFirstChild("ATMIconBillboard", true)
-
-                if billboard and not arc then
-                    return spawner, atmPart
-                end
-            end
-        end
-    end
-end
-
---------------------------------------------------
--- ESP
---------------------------------------------------
-local function updateESP()
-    for _, h in ipairs(highlights) do
-        if h then h:Destroy() end
-    end
-    highlights = {}
-
-    local folder = getFolder()
-    if not folder then return end
-
-    for _, spawner in ipairs(folder:GetChildren()) do
-        local atmModel = spawner:FindFirstChild("CriminalATM")
-        local atmPart = atmModel and atmModel:FindFirstChild("ATM")
-
-        if atmPart then
-            local arc = atmPart:FindFirstChild("ATMElectricArc", true)
-            local billboard = atmPart:FindFirstChild("ATMIconBillboard", true)
-
-            if billboard and not arc then
-                local hl = Instance.new("Highlight")
-                hl.FillColor = Color3.fromRGB(255,255,0)
-                hl.FillTransparency = 0.5
-                hl.Adornee = atmPart
-                hl.Parent = atmPart
-                table.insert(highlights, hl)
-            end
-        end
-    end
-end
-
---------------------------------------------------
--- PROMPT
---------------------------------------------------
-local function getPrompt(atm)
-    for _, v in ipairs(atm:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            return v
-        end
-    end
-end
-
---------------------------------------------------
--- HOLD E
---------------------------------------------------
-local function holdPrompt(prompt, duration)
-    local start = tick()
-    prompt:InputHoldBegin()
-
-    while tick() - start < duration and prompt.Parent and prompt.Enabled do
-        RunService.Heartbeat:Wait()
-    end
-
-    prompt:InputHoldEnd()
-end
-
---------------------------------------------------
--- NOCLIP
---------------------------------------------------
-RunService.Stepped:Connect(function()
-    if not farming then return end
-    local char = player.Character
-    if char then
-        for _, v in ipairs(char:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
-        end
-    end
-end)
-
---------------------------------------------------
--- SNAP + CAMERA
---------------------------------------------------
-local function snap(atm)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    startLock()
-
-    RunService:BindToRenderStep("ATM_LOCK", Enum.RenderPriority.Character.Value + 1, function()
-        if not farming or not atm or not atm.Parent then
-            RunService:UnbindFromRenderStep("ATM_LOCK")
-            return
-        end
-
-        hrp.CFrame = CFrame.new(atm.Position + UNDER_OFFSET)
-
-        local camPos = atm.Position + Vector3.new(0, CAMERA_HEIGHT, CAMERA_BACK)
-        local lookPos = atm.Position + Vector3.new(0,1,0)
-        camera.CFrame = CFrame.new(camPos, lookPos)
-
-        if bodyVel then
-            bodyVel.Velocity = Vector3.zero
-        end
-    end)
-end
-
-local function stopSnap()
-    RunService:UnbindFromRenderStep("ATM_LOCK")
-    stopLock()
-end
-
---------------------------------------------------
--- COUNT MONEY BAGS
---------------------------------------------------
-local function countBags()
-    local backpack = player:FindFirstChild("Backpack")
-    if not backpack then return 0 end
-
-    local count = 0
-    for _, item in ipairs(backpack:GetChildren()) do
-        if item.Name == "CriminalMoneyBag" then
-            count += 1
-        end
-    end
-    return count
-end
-
---------------------------------------------------
--- TELEPORT TO MONEYBAG LOCATION
---------------------------------------------------
-local function teleportMoneyBag()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(MONEYBAG_TP_POS)
-        print("✅ Teleported due to 10 money bags!")
-    end
-end
-
---------------------------------------------------
--- MAIN LOOP
---------------------------------------------------
-task.spawn(function()
-    while true do
-        if farming then
-            updateESP()
-
-            local spawner, atm = getValid()
-
-            if spawner and atm then
-                failCount = 0
-                emergencyUsed = false
-            else
-                failCount += 1
-                warn("❌ No ATM (fail " .. failCount .. ")")
-
-                if failCount >= 2 and not emergencyUsed then
-                    emergencyTeleport()
-                    emergencyUsed = true
-                    print("⏳ Waiting after emergency...")
-                    task.wait(WAIT_AFTER_EMERGENCY)
-                else
-                    task.wait(2)
-                end
-
-                continue
-            end
-
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not hrp then continue end
-
-            hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
-            LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
-
-            task.wait(0.3)
-
-            createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
-            snap(atm)
-
-            local prompt = getPrompt(atm)
-            if prompt then
-                prompt.MaxActivationDistance = 100
-                holdPrompt(prompt, 10)
-                print("✅ ATM DONE")
-                LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
-            end
-            stopSnap()
-            task.wait(5)
-        end
-
-        -- AUTO MONEY BAG TELEPORT
-        if autoTP then
-            if countBags() >= REQUIRED_BAGS then
-                teleportMoneyBag()
-                autoTP = false
-            end
-        end
-
-        -- ⏱️ TIMEOUT FAILSAFE (NEW)
-        if tick() - LAST_ACTION_TIME >= TIMEOUT then
-            timeoutTeleport()
-        end
-
-        task.wait(0.5)
-    end
-end)
-
---------------------------------------------------
--- UI BUTTONS (UNCHANGED)
---------------------------------------------------
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.ResetOnSpawn = false
-
-local farmButton = Instance.new("TextButton")
-farmButton.Size = UDim2.new(0,100,0,40)
-farmButton.Position = UDim2.new(0,20,0,200)
-farmButton.Text = "ATM OFF"
-farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
-farmButton.TextScaled = true
-farmButton.Parent = gui
-Instance.new("UICorner", farmButton).CornerRadius = UDim.new(1,0)
-
-farmButton.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        farmButton.Text = "ATM ON"
-        farmButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
-    else
-        farmButton.Text = "ATM OFF"
-        farmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
-        stopSnap()
-        stopLock()
-    end
-end)
-
-local tpButton = Instance.new("TextButton")
-tpButton.Size = UDim2.new(0,140,0,40)
-tpButton.Position = UDim2.new(0,20,0,260)
-tpButton.Text = "TP TO SELL"
-tpButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
-tpButton.TextScaled = true
-tpButton.Parent = gui
-Instance.new("UICorner", tpButton).CornerRadius = UDim.new(1,0)
+local TweenService = game:GetService("TweenService")
 
 tpButton.MouseButton1Click:Connect(function()
     local char = player.Character
     if not char then return end
 
     local hrp = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not hrp then return end
 
-    if hrp and humanoid then
-        -- 🔥 exact CFrame (yours)
-        hrp.CFrame = CFrame.new(
-            -2535.59644, 14.8897724, 4031.43628,
-            0.159823567, -4.00125373e-08, 0.987145603,
-            2.25429719e-08, 1, 3.68837583e-08,
-            -0.987145603, 1.63583032e-08, 0.159823567
-        )
+    -- ✅ TELEPORT (exact CFrame)
+    hrp.CFrame = CFrame.new(
+        -2535.59644, 14.8897724, 4031.43628,
+        0.159823567, -4.00125373e-08, 0.987145603,
+        2.25429719e-08, 1, 3.68837583e-08,
+        -0.987145603, 1.63583032e-08, 0.159823567
+    )
 
-        print("📦 TP to sell (exact CFrame)")
+    print("📦 TP to sell (frozen start)")
 
-        -- 🚶 walk forward for 2 seconds
-        humanoid:Move(hrp.CFrame.LookVector, false)
+    --------------------------------------------------
+    -- 🧊 FREEZE PLAYER
+    --------------------------------------------------
+    local bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(1e10,1e10,1e10)
+    bodyVel.Velocity = Vector3.zero
+    bodyVel.Parent = hrp
 
-        task.delay(2, function()
-            if humanoid then
-                humanoid:Move(Vector3.zero, false)
-            end
-        end)
-    end
+    --------------------------------------------------
+    -- ⏳ WAIT FOR LOAD
+    --------------------------------------------------
+    task.wait(1) -- you can increase to 1.5 if needed
+
+    --------------------------------------------------
+    -- 🚀 TWEEN FORWARD 30 STUDS
+    --------------------------------------------------
+    local forwardPos = hrp.Position + (hrp.CFrame.LookVector * 30)
+
+    local tween = TweenService:Create(
+        hrp,
+        TweenInfo.new(1.2, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(forwardPos, forwardPos + hrp.CFrame.LookVector)}
+    )
+
+    tween:Play()
+
+    --------------------------------------------------
+    -- 🔓 UNFREEZE AFTER MOVE
+    --------------------------------------------------
+    tween.Completed:Connect(function()
+        if bodyVel then
+            bodyVel:Destroy()
+        end
+    end)
 end)
