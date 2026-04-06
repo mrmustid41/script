@@ -180,13 +180,24 @@ local function getPrompt(atm)
 end
 
 --------------------------------------------------
--- HOLD E
+-- HOLD E (SMART / FAST)
 --------------------------------------------------
-local function holdPrompt(prompt, duration)
+local function holdPrompt(prompt, maxTime)
+    if not prompt then return end
+
     local start = tick()
+
+    -- ⚡ make it faster
+    prompt.HoldDuration = 0
+
     prompt:InputHoldBegin()
 
-    while tick() - start < duration and prompt.Parent and prompt.Enabled do
+    while prompt.Parent and prompt.Enabled do
+        -- 🛑 safety timeout (prevents getting stuck)
+        if tick() - start > (maxTime or 6) then
+            break
+        end
+
         RunService.Heartbeat:Wait()
     end
 
