@@ -318,12 +318,12 @@ task.spawn(function()
             local prompt = getPrompt(atm)
             if prompt then
                 prompt.MaxActivationDistance = 100
-                holdPrompt(prompt, 6)
+                holdPrompt(prompt, 7)
                 print("✅ ATM DONE")
                 LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
             end
             stopSnap()
-            task.wait(1)
+            task.wait(1.5)
         end
 
         -- AUTO MONEY BAG TELEPORT
