@@ -310,7 +310,7 @@ task.spawn(function()
             hrp.CFrame = spawner.CFrame + Vector3.new(0,5,0)
             LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
 
-            task.wait(0.3)
+            task.wait(1)
 
             createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
             snap(atm)
