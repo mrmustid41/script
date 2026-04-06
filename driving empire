@@ -318,7 +318,7 @@ task.spawn(function()
             local prompt = getPrompt(atm)
             if prompt then
                 prompt.MaxActivationDistance = 100
-                holdPrompt(prompt, 10)
+                holdPrompt(prompt, 6)
                 print("✅ ATM DONE")
                 LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
             end
