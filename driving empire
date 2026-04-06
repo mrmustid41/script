@@ -323,7 +323,7 @@ task.spawn(function()
                 LAST_ACTION_TIME = tick() -- ✅ RESET TIMER
             end
             stopSnap()
-            task.wait(5)
+            task.wait(1)
         end
 
         -- AUTO MONEY BAG TELEPORT
