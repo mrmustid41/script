@@ -187,9 +187,6 @@ local function holdPrompt(prompt, maxTime)
 
     local start = tick()
 
-    -- ⚡ make it faster
-    prompt.HoldDuration = 0
-
     prompt:InputHoldBegin()
 
     while prompt.Parent and prompt.Enabled do
