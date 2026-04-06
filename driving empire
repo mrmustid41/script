@@ -180,21 +180,22 @@ local function getPrompt(atm)
 end
 
 --------------------------------------------------
--- HOLD E (SMART / FAST)
+-- HOLD E (SAFE FIX)
 --------------------------------------------------
-local function holdPrompt(prompt, maxTime)
+local function holdPrompt(prompt, duration)
     if not prompt then return end
+
+    -- make sure prompt is enabled
+    prompt.Enabled = true
 
     local start = tick()
 
     prompt:InputHoldBegin()
 
     while prompt.Parent and prompt.Enabled do
-        -- 🛑 safety timeout (prevents getting stuck)
-        if tick() - start > (maxTime or 6) then
+        if tick() - start >= (duration or 5) then
             break
         end
-
         RunService.Heartbeat:Wait()
     end
 
