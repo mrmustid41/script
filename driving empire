@@ -315,6 +315,8 @@ task.spawn(function()
             createPlatform(atm.Position + Vector3.new(0,-8,0), Color3.fromRGB(0,255,0))
             snap(atm)
 
+            task.wait(1)
+
             local prompt = getPrompt(atm)
             if prompt then
                 prompt.MaxActivationDistance = 100
