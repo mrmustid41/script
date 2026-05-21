@@ -1,0 +1,37 @@
+@echo off
+setlocal enabledelayedexpansion
+
+echo Backing up Firefox cookies...
+
+:: Set backup destination (change if you want)
+set BackupDir=%USERPROFILE%\Desktop\Firefox_Cookies_Backup_%DATE:~-4%%DATE:~-7,2%%DATE:~-10,2%
+
+:: Create backup folder
+if not exist "%BackupDir%" mkdir "%BackupDir%"
+
+:: Copy from Roaming profiles (main location for cookies.sqlite)
+for /d %%x in ("%APPDATA%\Mozilla\Firefox\Profiles\*") do (
+    echo Copying cookies from profile: %%~nx
+    if exist "%%x\cookies.sqlite" (
+        copy /y "%%x\cookies.sqlite" "%BackupDir%\%%~nx_cookies.sqlite" >nul
+    )
+    if exist "%%x\cookies.sqlite-shm" (
+        copy /y "%%x\cookies.sqlite-shm" "%BackupDir%\%%~nx_cookies.sqlite-shm" >nul
+    )
+    if exist "%%x\cookies.sqlite-wal" (
+        copy /y "%%x\cookies.sqlite-wal" "%BackupDir%\%%~nx_cookies.sqlite-wal" >nul
+    )
+)
+
+:: Also check Local profiles if any (rare but possible)
+for /d %%x in ("%LOCALAPPDATA%\Mozilla\Firefox\Profiles\*") do (
+    if exist "%%x\cookies.sqlite" (
+        copy /y "%%x\cookies.sqlite" "%BackupDir%\Local_%%~nx_cookies.sqlite" >nul
+    )
+)
+
+echo.
+echo Cookies backup completed!
+echo Backup folder: %BackupDir%
+echo.
+pause
